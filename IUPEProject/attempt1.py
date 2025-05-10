@@ -1,11 +1,9 @@
 import pandas as pd #dataframe
 import string
 
-
 #Dataframe
 df = pd.read_csv('Phishing_Email.csv')
 df_subset = df.head(1000)
-
 
 #dataset columns: "Index(['Unnamed: 0', 'Email Text', 'Email Type'], dtype='object')"
 df_subset = df_subset.drop(columns=['Unnamed: 0']) #unnamed column isnt very useful
@@ -23,18 +21,12 @@ def clean_text(text):
 
 df_subset['cleaned'] = df_subset['text'].apply(clean_text) #create a new column called cleaned
 
-
 print(df_subset[['text', 'cleaned']].head())
 
 #vectorize the text
-
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 vectorizer = TfidfVectorizer() 
-
-#account	click	here	meeting	now	room	today	verify
-# Email 0	0.25	0.25	0.25	0	0.25	0	0	0.25
-# Email 1	0	0	0	0.33	0	0.33	0.33	0
 
 X = vectorizer.fit_transform(df_subset['cleaned']) #each row is email, each column is word
 y = df_subset['label']
@@ -51,3 +43,21 @@ model.fit(X_train, y_train)
 
 y_pred = model.predict(X_test)
 print(classification_report(y_test, y_pred))
+
+from sklearn.metrics import classification_report, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
+import numpy as np
+
+feature_names = vectorizer.get_feature_names_out()
+coefficients = model.coef_[0]
+
+top_indices = np.argsort(coefficients)[-10:]
+bottom_indices = np.argsort(coefficients)[:10]
+
+print("Top 10 phishing words:")
+for i in reversed(top_indices):
+    print(f"{feature_names[i]}: {coefficients[i]:.3f}")
+
+print("\nTop 10 safe words:")
+for i in bottom_indices:
+    print(f"{feature_names[i]}: {coefficients[i]:.3f}")
